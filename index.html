@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>2048</title>
+    <style>
+        :root {
+            --bg: #0a0a0a; --grid-bg: #1a1a1a; --text: #00ff41; --accent: #00ff41; 
+            --round: 8px; --tile-font-size: 24px; --size: 4;
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            background-color: var(--bg); color: var(--text); font-family: 'Courier New', monospace;
+            display: flex; flex-direction: column; align-items: center; margin: 0; padding: 20px 0;
+            min-height: 100vh; overflow-y: auto; overflow-x: hidden;
+        }
+        .container { width: 90vw; max-width: 400px; display: flex; flex-direction: column; position: relative; }
+        .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px; }
+        
+        .grid-wrapper { position: relative; width: 100%; aspect-ratio: 1/1; touch-action: none; background: transparent; }
+        .grid {
+            display: grid; gap: 10px; background: var(--grid-bg); padding: 12px; border-radius: var(--round);
+            width: 100%; height: 100%; border: 1px solid #333;
+            grid-template-columns: repeat(var(--size), 1fr); grid-template-rows: repeat(var(--size), 1fr);
+        }
+        .cell {
+            background: rgba(255,255,255,0.05); border-radius: calc(var(--round) / 2); 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: var(--tile-font-size); font-weight: bold; width: 100%; height: 100%;
+        }
+
+        #game-over {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); border-radius: var(--round);
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 10; backdrop-filter: blur(4px); border: 2px solid var(--accent);
+        }
+
+        .studio-section {
+            width: 90vw; max-width: 400px; margin-top: 40px; background: #111; 
+            border: 1px solid var(--accent); padding: 20px; border-radius: 12px; margin-bottom: 50px;
+        }
+        .studio-header { font-size: 11px; letter-spacing: 2px; color: #666; text-transform: uppercase; margin: 20px 0 10px; border-bottom: 1px solid #222; }
+        .control-group { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 13px; }
+        
+        button {
+            flex: 1; background: #000; border: 1px solid var(--accent); color: var(--accent);
+            padding: 12px; cursor: pointer; font-family: inherit; font-size: 11px; text-transform: uppercase;
+        }
+        button:active { background: var(--accent); color: #000; }
+
+        input[type="range"], input[type="color"] { accent-color: var(--accent); outline: none; }
+        input[type="range"] { -webkit-appearance: none; background: #222; height: 6px; border-radius: 3px; cursor: pointer; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--accent); border-radius: 50%; }
+        input[type="color"] { background: none; border: 1px solid #444; width: 32px; height: 32px; cursor: pointer; padding: 0; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div style="font-size: 32px; font-weight: 900; letter-spacing: -1px;">2048</div>
+            <div style="text-align: right; line-height: 1.2;">
+                <span style="font-size: 10px; opacity: 0.6;">SCORE</span><br>
+                <span id="score" style="font-size: 20px; font-weight: bold;">0</span>
+            </div>
+        </div>
+
+        <div class="grid-wrapper" id="touch-area">
+            <div class="grid" id="grid"></div>
+            <div id="game-over"><h2 style="font-size: 28px; color: var(--accent);">GAME OVER</h2></div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button onclick="undo()">Undo (<span id="undo-count">3</span>)</button>
+            <button onclick="initGame()">Restart</button>
+        </div>
+    </div>
+
+    <div class="studio-section">
+        <div class="studio-header" style="margin-top:0;">Grid Configuration</div>
+        <div class="control-group"><span>Grid Size</span><input type="range" id="s-size" value="4" min="3" max="6" oninput="updateGridSize(this.value)"></div>
+        <div class="control-group"><span>Rounding</span><input type="range" id="s-round" min="0" max="50" value="8" oninput="updateCorners(this.value)"></div>
+        <div class="control-group"><span>Tile Size</span><input type="range" id="s-font" min="14" max="40" value="24" oninput="updateFontSize(this.value)"></div>
+
+        <div class="studio-header">Color Palette</div>
+        <div class="control-group"><span>Background</span><input type="color" id="p-bg" value="#0a0a0a" oninput="syncColor('bg', this.value)"></div>
+        <div class="control-group"><span>UI Accent</span><input type="color" id="p-accent" value="#00ff41" oninput="syncColor('text', this.value)"></div>
+        
+        <div class="studio-header">Tile Specialist</div>
+        <div id="tile-registry"></div>
+    </div>
+
+    <script>
+        let size = 4, score = 0, squares = [], undoStack = [], undosLeft = 3;
+        let tileMap = JSON.parse(localStorage.getItem('2048-tiles')) || { 2: "#2d2d2d", 4: "#3d3d3d", 8: "#00ff41", 16: "#00cc33", 32: "#00aa22", 64: "#008811", 128: "#ff00ff", 256: "#00ffff", 512: "#ffaa00", 1024: "#ff0000", 2048: "#00ff41" };
+
+        function saveConfig() {
+            localStorage.setItem('2048-config', JSON.stringify({
+                size, round: getComputedStyle(document.documentElement).getPropertyValue('--round'),
+                fontSize: getComputedStyle(document.documentElement).getPropertyValue('--tile-font-size'),
+                bg: getComputedStyle(document.documentElement).getPropertyValue('--bg'),
+                accent: getComputedStyle(document.documentElement).getPropertyValue('--accent')
+            }));
+            localStorage.setItem('2048-tiles', JSON.stringify(tileMap));
+        }
+
+        function loadConfig() {
+            const cfg = JSON.parse(localStorage.getItem('2048-config'));
+            if(cfg) {
+                size = cfg.size; 
+                document.documentElement.style.setProperty('--round', cfg.round);
+                document.documentElement.style.setProperty('--tile-font-size', cfg.fontSize);
+                document.documentElement.style.setProperty('--bg', cfg.bg);
+                document.documentElement.style.setProperty('--text', cfg.accent);
+                document.documentElement.style.setProperty('--accent', cfg.accent);
+                document.getElementById('s-size').value = size;
+                document.getElementById('s-round').value = parseInt(cfg.round);
+                document.getElementById('s-font').value = parseInt(cfg.fontSize);
+                document.getElementById('p-bg').value = cfg.bg.trim();
+                document.getElementById('p-accent').value = cfg.accent.trim();
+            }
+        }
+
+        function updateFontSize(val) { document.documentElement.style.setProperty('--tile-font-size', val + 'px'); saveConfig(); }
+        function updateCorners(val) { document.documentElement.style.setProperty('--round', val + 'px'); saveConfig(); }
+        function updateGridSize(val) { size = parseInt(val); document.documentElement.style.setProperty('--size', size); saveConfig(); initGame(); }
+        
+        function populateRegistry() {
+            const reg = document.getElementById('tile-registry'); reg.innerHTML = '';
+            Object.keys(tileMap).forEach(num => {
+                let div = document.createElement('div'); div.className = 'control-group';
+                div.innerHTML = `<span>Tile ${num}</span><input type="color" value="${tileMap[num]}" oninput="tileMap[${num}]=this.value; updateVisuals(); saveConfig();">`;
+                reg.appendChild(div);
+            });
+        }
+
+        function syncColor(type, val) {
+            const r = document.documentElement.style;
+            if(type === 'bg') r.setProperty('--bg', val);
+            if(type === 'text') { r.setProperty('--text', val); r.setProperty('--accent', val); }
+            saveConfig();
+        }
+
+        function initGame() {
+            const grid = document.getElementById('grid'); grid.innerHTML = "";
+            document.getElementById('game-over').style.display = 'none';
+            squares = []; score = 0; undosLeft = 3; undoStack = [];
+            document.getElementById('score').innerText = 0;
+            document.getElementById('undo-count').innerText = 3;
+            for (let i = 0; i < size * size; i++) {
+                let cell = document.createElement('div'); cell.className = 'cell';
+                grid.appendChild(cell); squares.push(cell);
+            }
+            populateRegistry(); generate(); generate();
+        }
+
+        function generate() {
+            let empty = squares.filter(s => s.innerHTML === "");
+            if (empty.length) {
+                let s = empty[Math.floor(Math.random() * empty.length)];
+                s.innerHTML = Math.random() > 0.1 ? 2 : 4;
+            }
+            updateVisuals();
+            if(isGameOver()) document.getElementById('game-over').style.display = 'flex';
+        }
+
+        function isGameOver() {
+            if (squares.some(s => s.innerHTML === "")) return false;
+            for (let i = 0; i < size; i++) {
+                for (let j = 0; j < size; j++) {
+                    let cur = squares[i * size + j].innerHTML;
+                    if (j < size - 1 && cur === squares[i * size + (j + 1)].innerHTML) return false;
+                    if (i < size - 1 && cur === squares[(i + 1) * size + j].innerHTML) return false;
+                }
+            }
+            return true;
+        }
+
+        function updateVisuals() {
+            squares.forEach(s => {
+                let val = s.innerHTML;
+                s.style.background = val ? (tileMap[val] || "var(--accent)") : "rgba(255,255,255,0.05)";
+                s.style.color = val ? "#fff" : "transparent";
+            });
+        }
+
+        function move(dir) {
+            if(document.getElementById('game-over').style.display === 'flex') return;
+            let prev = squares.map(s => s.innerHTML), moved = false;
+            for (let i = 0; i < size; i++) {
+                let line = [];
+                for (let j = 0; j < size; j++) {
+                    let idx = (dir === 'left' || dir === 'right') ? (i * size + j) : (j * size + i);
+                    line.push(squares[idx].innerHTML);
+                }
+                if (dir === 'right' || dir === 'down') line.reverse();
+                let filtered = line.filter(x => x !== "");
+                for (let j = 0; j < filtered.length - 1; j++) {
+                    if (filtered[j] === filtered[j+1]) {
+                        filtered[j] = parseInt(filtered[j]) * 2; score += filtered[j];
+                        filtered.splice(j+1, 1);
+                    }
+                }
+                while(filtered.length < size) filtered.push("");
+                if (dir === 'right' || dir === 'down') filtered.reverse();
+                for (let j = 0; j < size; j++) {
+                    let idx = (dir === 'left' || dir === 'right') ? (i * size + j) : (j * size + i);
+                    if(squares[idx].innerHTML !== String(filtered[j])) { squares[idx].innerHTML = filtered[j]; moved = true; }
+                }
+            }
+            if (moved) { 
+                undoStack.push({b: prev, s: (score - (undoStack.length ? (score - undoStack[undoStack.length-1].s) : score))}); 
+                if(undoStack.length > 10) undoStack.shift();
+                generate(); 
+                document.getElementById('score').innerText = score; 
+            }
+        }
+
+        function undo() {
+            if(undosLeft > 0 && undoStack.length > 0) {
+                let state = undoStack.pop(); squares.forEach((s, i) => s.innerHTML = state.b[i]);
+                score = state.s; document.getElementById('score').innerText = score;
+                undosLeft--; document.getElementById('undo-count').innerText = undosLeft;
+                document.getElementById('game-over').style.display = 'none';
+                updateVisuals();
+            }
+        }
+
+        let sX, sY;
+        const touchArea = document.getElementById('touch-area');
+        touchArea.addEventListener('touchstart', e => { sX = e.touches[0].clientX; sY = e.touches[0].clientY; }, {passive: true});
+        touchArea.addEventListener('touchend', e => {
+            let dX = e.changedTouches[0].clientX - sX, dY = e.changedTouches[0].clientY - sY;
+            if (Math.max(Math.abs(dX), Math.abs(dY)) > 30) {
+                if (Math.abs(dX) > Math.abs(dY)) move(dX > 0 ? 'right' : 'left');
+                else move(dY > 0 ? 'down' : 'up');
+            }
+        });
+        document.addEventListener('keydown', e => { if (e.key.includes('Arrow')) { e.preventDefault(); move(e.key.replace('Arrow','').toLowerCase()); } });
+
+        loadConfig();
+        initGame();
+    </script>
+</body>
+</html>
