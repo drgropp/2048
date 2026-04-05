@@ -1,247 +1,353 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>2048</title>
-    <style>
-        :root {
-            --bg: #0a0a0a; --grid-bg: #1a1a1a; --text: #00ff41; --accent: #00ff41; 
-            --round: 8px; --tile-font-size: 24px; --size: 4;
-        }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body {
-            background-color: var(--bg); color: var(--text); font-family: 'Courier New', monospace;
-            display: flex; flex-direction: column; align-items: center; margin: 0; padding: 20px 0;
-            min-height: 100vh; overflow-y: auto; overflow-x: hidden;
-        }
-        .container { width: 90vw; max-width: 400px; display: flex; flex-direction: column; position: relative; }
-        .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px; }
-        
-        .grid-wrapper { position: relative; width: 100%; aspect-ratio: 1/1; touch-action: none; background: transparent; }
-        .grid {
-            display: grid; gap: 10px; background: var(--grid-bg); padding: 12px; border-radius: var(--round);
-            width: 100%; height: 100%; border: 1px solid #333;
-            grid-template-columns: repeat(var(--size), 1fr); grid-template-rows: repeat(var(--size), 1fr);
-        }
-        .cell {
-            background: rgba(255,255,255,0.05); border-radius: calc(var(--round) / 2); 
-            display: flex; align-items: center; justify-content: center; 
-            font-size: var(--tile-font-size); font-weight: bold; width: 100%; height: 100%;
-        }
-
-        #game-over {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); border-radius: var(--round);
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 10; backdrop-filter: blur(4px); border: 2px solid var(--accent);
-        }
-
-        .studio-section {
-            width: 90vw; max-width: 400px; margin-top: 40px; background: #111; 
-            border: 1px solid var(--accent); padding: 20px; border-radius: 12px; margin-bottom: 50px;
-        }
-        .studio-header { font-size: 11px; letter-spacing: 2px; color: #666; text-transform: uppercase; margin: 20px 0 10px; border-bottom: 1px solid #222; }
-        .control-group { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 13px; }
-        
-        button {
-            flex: 1; background: #000; border: 1px solid var(--accent); color: var(--accent);
-            padding: 12px; cursor: pointer; font-family: inherit; font-size: 11px; text-transform: uppercase;
-        }
-        button:active { background: var(--accent); color: #000; }
-
-        input[type="range"], input[type="color"] { accent-color: var(--accent); outline: none; }
-        input[type="range"] { -webkit-appearance: none; background: #222; height: 6px; border-radius: 3px; cursor: pointer; }
-        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--accent); border-radius: 50%; }
-        input[type="color"] { background: none; border: 1px solid #444; width: 32px; height: 32px; cursor: pointer; padding: 0; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Grop2048 — The Premium 2048 Game</title>
+<meta name="description" content="Grop2048 — a fully customizable, premium 2048 puzzle game. Custom themes, background images, score history and more.">
+<meta name="keywords" content="grop2048, grop, groyper, 2048, puzzle game, tile game, number game">
+<meta name="author" content="Grop2048">
+<meta property="og:title" content="Grop2048 — The Premium 2048 Game">
+<meta property="og:description" content="Play Grop2048 — the most customizable 2048 game online. Can you beat my score?">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://drgropp.github.io/2048/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Grop2048">
+<meta name="twitter:description" content="The premium 2048 — fully customizable themes, score history, and more.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='12' fill='%230c0c0e'/><text y='.9em' font-size='60' font-family='monospace' fill='%23c9a84c' x='10'>G</text></svg>">
+<style>
+:root {
+    --font: 'Courier New', Courier, monospace;
+    --bg:#0c0c0e; --surface:#141418; --surface2:#1c1c22;
+    --border:rgba(255,255,255,0.07); --border-hover:rgba(255,255,255,0.15);
+    --gold:#c9a84c; --gold-light:#e8c87a; --gold-dim:rgba(201,168,76,0.14); --gold-border:rgba(201,168,76,0.32);
+    --text:#f0ede6; --text-muted:#6e6b62; --text-dim:#3a3836;
+    --round:10px; --round-sm:7px; --tile-font-size:24px; --size:4;
+    --bg-img-opacity:0; --bg-img-blur:0px;
+}
+*,*::before,*::after{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
+body{
+    background:var(--bg); color:var(--text); font-family:var(--font);
+    display:flex; flex-direction:column; align-items:center;
+    min-height:100vh; padding:28px 0 60px; overflow-y:auto; overflow-x:hidden;
+    position:relative;
+}
+body::before {
+    content:''; position:fixed; inset:0; z-index:0;
+    background-image:var(--bg-image,none);
+    background-size:cover; background-position:center;
+    opacity:var(--bg-img-opacity); filter:blur(var(--bg-img-blur));
+    transition:opacity 0.4s, filter 0.4s;
+    pointer-events:none;
+}
+body>*{position:relative;z-index:1;}
+body::after{
+    content:''; position:fixed; top:-20%; left:10%; right:10%; height:50%;
+    background:radial-gradient(ellipse at 50% 0%, var(--glow-color,rgba(201,168,76,0.07)) 0%, transparent 70%);
+    z-index:0; pointer-events:none;
+}
+.container{width:90vw;max-width:420px;display:flex;flex-direction:column;position:relative;}
+.wide{width:90vw;max-width:420px;}
+.header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:18px;}
+.brand-title{font-family:var(--font);font-size:48px;font-weight:900;color:var(--gold-light);letter-spacing:0.04em;line-height:1;text-transform:uppercase;}
+.brand-sub{font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-muted);margin-top:6px;font-family:var(--font);}
+.scores-wrap{display:flex;gap:8px;}
+.score-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--round-sm);padding:8px 14px;text-align:center;min-width:72px;}
+.score-label{font-size:8px;letter-spacing:0.2em;text-transform:uppercase;color:var(--text-muted);margin-bottom:3px;font-family:var(--font);}
+.score-value{font-size:20px;font-weight:700;color:var(--gold-light);font-variant-numeric:tabular-nums;font-family:var(--font);letter-spacing:0.05em;}
+.score-value.bump{animation:scoreBump 0.28s cubic-bezier(0.34,1.56,0.64,1);}
+@keyframes scoreBump{0%{transform:scale(1)}50%{transform:scale(1.22)}100%{transform:scale(1)}}
+.btn-row{display:flex;gap:8px;margin-bottom:14px;}
+.btn{flex:1;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--round-sm);color:var(--text-muted);padding:10px 8px;cursor:pointer;font-family:var(--font);font-size:11px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;transition:background 0.18s,color 0.18s,border-color 0.18s,transform 0.1s;}
+.btn:hover{border-color:var(--border-hover);color:var(--text);}
+.btn:active{transform:scale(0.96);}
+.btn.btn-gold{background:var(--gold-dim);color:var(--gold);border-color:var(--gold-border);}
+.btn.btn-gold:hover{background:var(--gold-dim);color:var(--gold-light);border-color:var(--gold-border);}
+.grid-wrapper{position:relative;width:100%;aspect-ratio:1/1;touch-action:none;}
+.grid{display:grid;gap:10px;background:var(--surface);padding:12px;border-radius:var(--round);border:0.5px solid var(--border);width:100%;height:100%;grid-template-columns:repeat(var(--size),1fr);grid-template-rows:repeat(var(--size),1fr);}
+.cell{background:rgba(255,255,255,0.03);border:0.5px solid rgba(255,255,255,0.04);border-radius:var(--round-sm);display:flex;align-items:center;justify-content:center;font-family:var(--font);font-size:var(--tile-font-size);font-weight:700;width:100%;height:100%;color:transparent;position:relative;overflow:hidden;transition:background 0.12s,color 0.12s;}
+.cell.has-value::after{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,0.07) 0%,transparent 55%);pointer-events:none;}
+.cell.spawn{animation:tileSpawn 0.20s cubic-bezier(0.34,1.56,0.64,1);}
+.cell.merge{animation:tileMerge 0.24s cubic-bezier(0.34,1.56,0.64,1);}
+@keyframes tileSpawn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes tileMerge{0%{transform:scale(1)}40%{transform:scale(1.16)}70%{transform:scale(0.94)}100%{transform:scale(1)}}
+#game-over{position:absolute;inset:0;background:rgba(12,12,14,0.88);border-radius:var(--round);display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;z-index:10;backdrop-filter:blur(6px);border:0.5px solid var(--border);animation:fadeIn 0.3s ease;}
+#game-over h2{font-family:var(--font);font-size:30px;font-weight:700;color:var(--gold-light);}
+#game-over p{font-size:13px;color:var(--text-muted);}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.footer-hint{margin-top:10px;font-size:11px;color:var(--text-dim);text-align:center;letter-spacing:0.06em;}
+.hidden{display:none!important;}
+.panel{margin-top:12px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--round);}
+.panel-bar{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:0.5px solid var(--border);cursor:pointer;user-select:none;}
+.panel-bar .ptl{font-size:10px;letter-spacing:0.18em;text-transform:uppercase;font-weight:500;color:var(--text-muted);}
+.chevron{font-size:11px;color:var(--text-dim);transition:transform 0.2s;}
+.chevron.open{transform:rotate(180deg);}
+.panel-body{max-height:0;overflow:hidden;transition:max-height 0.5s ease,padding 0.2s;padding:0 18px;}
+.panel-body.open{max-height:4000px;padding:16px 18px 28px;}
+.ctrl{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;color:var(--text);}
+.ctrl span{font-size:12px;}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;}
+.stat-card{background:var(--surface2);border-radius:var(--round-sm);padding:10px 12px;text-align:center;}
+.stat-card .sv{font-size:20px;font-weight:600;color:var(--gold-light);font-variant-numeric:tabular-nums;}
+.stat-card .sl{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-top:2px;}
+.hist-lbl{font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;}
+.hist-list{display:flex;flex-direction:column;gap:6px;}
+.hist-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--surface2);border-radius:var(--round-sm);font-size:12px;color:var(--text);}
+.hist-row .hr-s{font-weight:600;color:var(--text);font-variant-numeric:tabular-nums;}
+.hist-row .hr-b{font-size:10px;color:var(--gold);}
+.theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.sw{aspect-ratio:1;border-radius:var(--round-sm);cursor:pointer;position:relative;border:1.5px solid transparent;transition:border-color 0.18s,transform 0.15s;overflow:hidden;}
+.sw:active{transform:scale(0.93);}
+.sw.active{border-color:var(--gold);}
+.sw-lbl{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:8px;letter-spacing:0.09em;text-transform:uppercase;padding:4px 2px;background:rgba(0,0,0,0.45);color:rgba(255,255,255,0.8);}
+.sw-obsidian{background:linear-gradient(135deg,#0c0c0e,#1c1c22);}
+.sw-light{background:linear-gradient(135deg,#f5f2ec,#eeeae2);}
+.sw-light .sw-lbl{color:rgba(0,0,0,0.5);background:rgba(255,255,255,0.5);}
+.sw-crimson{background:linear-gradient(135deg,#0e0a0a,#221414);}
+.sw-arctic{background:linear-gradient(135deg,#0a0c10,#161c28);}
+.sw-neon{background:linear-gradient(135deg,#080810,#001a12);}
+.sw-dusk{background:linear-gradient(135deg,#100a14,#1c0e28);}
+.theme-overrides{background:var(--surface2);border-radius:var(--round-sm);padding:12px 14px;margin-top:10px;}
+.theme-overrides .to-title{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+.reset-btn{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);border:0.5px solid var(--border);background:none;border-radius:4px;padding:3px 8px;cursor:pointer;font-family:var(--font);transition:color 0.18s,border-color 0.18s;}
+.reset-btn:hover{color:var(--text-muted);border-color:var(--border-hover);}
+.grp{font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--text-dim);margin:18px 0 10px;padding-bottom:6px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.grp:first-child{margin-top:0;}
+.bg-img-preview{width:100%;height:60px;border-radius:var(--round-sm);background:var(--surface2);border:0.5px dashed var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;margin-bottom:10px;transition:border-color 0.18s;}
+.bg-img-preview:hover{border-color:var(--border-hover);}
+.bg-img-preview img{width:100%;height:100%;object-fit:cover;}
+.bg-img-preview .bg-placeholder{font-size:11px;color:var(--text-dim);letter-spacing:0.06em;}
+.bg-controls{display:flex;flex-direction:column;gap:10px;}
+.preset-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;min-height:20px;}
+.preset-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface2);border-radius:var(--round-sm);cursor:pointer;border:0.5px solid transparent;transition:border-color 0.18s;}
+.preset-item:hover{border-color:var(--border-hover);}
+.preset-item.active-preset{border-color:var(--gold-border);background:var(--gold-dim);}
+.preset-name{flex:1;font-size:12px;color:var(--text);}
+.preset-meta{font-size:10px;color:var(--text-muted);}
+.preset-del{font-size:12px;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:2px 4px;line-height:1;transition:color 0.18s;}
+.preset-del:hover{color:#e87a7a;}
+.save-preset-row{display:flex;gap:8px;}
+.preset-input{flex:1;background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--round-sm);padding:8px 12px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;transition:border-color 0.18s;}
+.preset-input:focus{border-color:var(--gold-border);}
+.preset-input::placeholder{color:var(--text-dim);}
+.save-btn{padding:8px 14px;background:var(--gold-dim);color:var(--gold);border:0.5px solid var(--gold-border);border-radius:var(--round-sm);cursor:pointer;font-family:var(--font);font-size:11px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;white-space:nowrap;transition:background 0.18s;}
+.save-btn:hover{background:rgba(201,168,76,0.25);}
+.no-presets{font-size:11px;color:var(--text-dim);text-align:center;padding:12px 0;}
+input[type="range"]{-webkit-appearance:none;appearance:none;background:var(--surface2);height:4px;border-radius:2px;cursor:pointer;width:140px;accent-color:var(--gold);outline:none;border:none;}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--gold);border-radius:50%;cursor:pointer;}
+input[type="range"]::-moz-range-thumb{width:14px;height:14px;background:var(--gold);border-radius:50%;cursor:pointer;border:none;}
+input[type="color"]{-webkit-appearance:none;appearance:none;background:none;border:0.5px solid var(--border);border-radius:5px;width:34px;height:28px;cursor:pointer;padding:2px;transition:border-color 0.2s;}
+input[type="color"]:hover{border-color:var(--border-hover);}
+#tile-registry{display:flex;flex-direction:column;gap:6px;}
+</style>
 </head>
 <body>
+<div class="container">
+    <div class="header">
+        <div>
+            <div class="brand-title">2048</div>
+            <div class="brand-sub">Grop2048</div>
+        </div>
+        <div class="scores-wrap">
+            <div class="score-card"><div class="score-label">Score</div><div class="score-value" id="score">0</div></div>
+            <div class="score-card"><div class="score-label">Best</div><div class="score-value" id="best-score">0</div></div>
+        </div>
+    </div>
+    <div class="btn-row">
+        <button class="btn btn-gold" onclick="initGame()">New Game</button>
+        <button class="btn" onclick="handleUndo()">Undo (<span id="undo-count">15</span>)</button>
+        <button class="btn" onclick="shareResult()">Share</button>
+    </div>
+    <div class="grid-wrapper" id="touch-area">
+        <div class="grid" id="grid"></div>
+        <div id="game-over"><h2>Game Over</h2><p id="game-over-score">Final score: 0</p></div>
+    </div>
+    <div class="footer-hint">Arrow keys or swipe to play</div>
+</div>
 
-    <div class="container">
-        <div class="header">
-            <div style="font-size: 32px; font-weight: 900; letter-spacing: -1px;">2048</div>
-            <div style="text-align: right; line-height: 1.2;">
-                <span style="font-size: 10px; opacity: 0.6;">SCORE</span><br>
-                <span id="score" style="font-size: 20px; font-weight: bold;">0</span>
+<div class="panel wide" id="stats-panel">
+    <div class="panel-bar" onclick="togglePanel('stats')">
+        <div class="ptl">Score History</div>
+        <span class="chevron open" id="chevron-stats">▼</span>
+    </div>
+    <div class="panel-body open" id="body-stats">
+        <div class="stats-grid">
+            <div class="stat-card"><div class="sv" id="stat-games">0</div><div class="sl">Games</div></div>
+            <div class="stat-card"><div class="sv" id="stat-avg">—</div><div class="sl">Avg</div></div>
+            <div class="stat-card"><div class="sv" id="stat-best">—</div><div class="sl">Best</div></div>
+        </div>
+        <div class="hist-lbl">Recent Games</div>
+        <div class="hist-list" id="hist-list"><div style="font-size:12px;color:var(--text-dim);text-align:center;padding:12px 0;">Finish a game to record it.</div></div>
+    </div>
+</div>
+
+<div class="panel wide" id="studio-panel" style="margin-bottom:20px;">
+    <div class="panel-bar" onclick="togglePanel('studio')">
+        <span class="ptl">Design Studio</span>
+        <span class="chevron" id="chevron-studio">▼</span>
+    </div>
+    <div class="panel-body" id="body-studio">
+        <div class="grp">Theme</div>
+        <div class="theme-grid" id="theme-grid"></div>
+        <div id="theme-override-section">
+            <div class="theme-overrides">
+                <div class="to-title">
+                    <span id="override-title">Customise theme</span>
+                    <button class="reset-btn" onclick="resetCurrentTheme()">Reset to default</button>
+                </div>
+                <div id="to-controls">
+                    <div class="ctrl"><span>Accent</span><input type="color" id="ov-accent" oninput="applyThemeOverride('accent',this.value)"></div>
+                    <div class="ctrl"><span>Background</span><input type="color" id="ov-bg" oninput="applyThemeOverride('bg',this.value)"></div>
+                    <div class="ctrl"><span>Panel surface</span><input type="color" id="ov-surface" oninput="applyThemeOverride('surface',this.value)"></div>
+                    <div class="ctrl"><span>Inner surface</span><input type="color" id="ov-surface2" oninput="applyThemeOverride('surface2',this.value)"></div>
+                    <div class="ctrl"><span>Border tint</span><input type="color" id="ov-border" oninput="applyThemeOverride('border-solid',this.value)"></div>
+                    <div class="ctrl"><span>Body text</span><input type="color" id="ov-text" oninput="applyThemeOverride('text',this.value)"></div>
+                    <div class="ctrl"><span>Labels / secondary</span><input type="color" id="ov-text-muted" oninput="applyThemeOverride('text-muted',this.value)"></div>
+                </div>
             </div>
         </div>
-
-        <div class="grid-wrapper" id="touch-area">
-            <div class="grid" id="grid"></div>
-            <div id="game-over"><h2 style="font-size: 28px; color: var(--accent);">GAME OVER</h2></div>
+        <div id="bg-image-section">
+            <div class="grp">Background Image</div>
+            <div class="bg-img-preview" id="bg-preview" onclick="document.getElementById('bg-file-input').click()">
+                <span class="bg-placeholder">Click to upload image</span>
+            </div>
+            <input type="file" id="bg-file-input" accept="image/*" style="display:none" onchange="handleBgUpload(event)">
+            <div class="bg-controls" id="bg-controls">
+                <div class="ctrl"><span>Opacity</span><input type="range" id="bg-opacity" min="0" max="100" value="0" oninput="setBgOpacity(this.value)"></div>
+                <div class="ctrl"><span>Blur</span><input type="range" id="bg-blur" min="0" max="20" value="0" oninput="setBgBlur(this.value)"></div>
+                <div class="ctrl"><span>Remove image</span><button class="reset-btn" onclick="removeBgImage()">Clear</button></div>
+            </div>
         </div>
-
-        <div style="display: flex; gap: 10px; margin-top: 15px;">
-            <button onclick="undo()">Undo (<span id="undo-count">3</span>)</button>
-            <button onclick="initGame()">Restart</button>
+        <div class="grp">Grid Configuration</div>
+        <div class="ctrl">
+            <span>Grid Size <small id="lbl-size" style="color:var(--gold);margin-left:4px;">4×4</small></span>
+            <input type="range" id="s-size" value="4" min="3" max="6" oninput="document.getElementById('lbl-size').textContent=this.value+'×'+this.value;updateGridSize(this.value)">
         </div>
-    </div>
-
-    <div class="studio-section">
-        <div class="studio-header" style="margin-top:0;">Grid Configuration</div>
-        <div class="control-group"><span>Grid Size</span><input type="range" id="s-size" value="4" min="3" max="6" oninput="updateGridSize(this.value)"></div>
-        <div class="control-group"><span>Rounding</span><input type="range" id="s-round" min="0" max="50" value="8" oninput="updateCorners(this.value)"></div>
-        <div class="control-group"><span>Tile Size</span><input type="range" id="s-font" min="14" max="40" value="24" oninput="updateFontSize(this.value)"></div>
-
-        <div class="studio-header">Color Palette</div>
-        <div class="control-group"><span>Background</span><input type="color" id="p-bg" value="#0a0a0a" oninput="syncColor('bg', this.value)"></div>
-        <div class="control-group"><span>UI Accent</span><input type="color" id="p-accent" value="#00ff41" oninput="syncColor('text', this.value)"></div>
-        
-        <div class="studio-header">Tile Specialist</div>
+        <div class="ctrl"><span>Corner Rounding</span><input type="range" id="s-round" min="0" max="24" value="10" oninput="updateCorners(this.value)"></div>
+        <div class="ctrl"><span>Tile Font Size</span><input type="range" id="s-font" min="12" max="40" value="24" oninput="updateFontSize(this.value)"></div>
+        <div class="grp">Tile Colours <button class="reset-btn" onclick="resetTileColors()" style="text-transform:uppercase;letter-spacing:0.08em;">Reset to default</button></div>
         <div id="tile-registry"></div>
+        <div id="presets-section">
+            <div class="grp">Design Presets</div>
+            <div class="preset-list" id="preset-list"></div>
+            <div class="save-preset-row">
+                <input class="preset-input" id="preset-name-input" type="text" placeholder="Name this preset…" maxlength="28">
+                <button class="save-btn" onclick="savePreset()">Save</button>
+            </div>
+        </div>
     </div>
+</div>
 
-    <script>
-        let size = 4, score = 0, squares = [], undoStack = [], undosLeft = 3;
-        let tileMap = JSON.parse(localStorage.getItem('2048-tiles')) || { 2: "#2d2d2d", 4: "#3d3d3d", 8: "#00ff41", 16: "#00cc33", 32: "#00aa22", 64: "#008811", 128: "#ff00ff", 256: "#00ffff", 512: "#ffaa00", 1024: "#ff0000", 2048: "#00ff41" };
+<script>
+const THEME_DEFS = {
+    obsidian: { label:'Obsidian', cls:'sw-obsidian',
+        defaults:{ accent:'#c9a84c','accent-light':'#e8c87a','accent-dim':'rgba(201,168,76,0.14)','accent-border':'rgba(201,168,76,0.32)',bg:'#0c0c0e',surface:'#141418',surface2:'#1c1c22','border-solid':'#222222',border:'rgba(255,255,255,0.07)','border-hover':'rgba(255,255,255,0.14)',text:'#f0ede6','text-muted':'#6e6b62','text-dim':'#3a3836','glow-color':'rgba(201,168,76,0.07)'}},
+    light:    { label:'Parchment', cls:'sw-light',
+        defaults:{ accent:'#a07828','accent-light':'#8a6420','accent-dim':'rgba(160,120,40,0.1)','accent-border':'rgba(160,120,40,0.3)',bg:'#f5f2ec',surface:'#ffffff',surface2:'#eeeae2','border-solid':'#d0cdc4',border:'rgba(0,0,0,0.08)','border-hover':'rgba(0,0,0,0.16)',text:'#1a1814','text-muted':'#7a7060','text-dim':'#bcb4a8','glow-color':'rgba(160,120,40,0.08)'}},
+    crimson:  { label:'Crimson', cls:'sw-crimson',
+        defaults:{ accent:'#c94c4c','accent-light':'#e87a7a','accent-dim':'rgba(201,76,76,0.14)','accent-border':'rgba(201,76,76,0.32)',bg:'#0e0a0a',surface:'#180e0e',surface2:'#221414','border-solid':'#3a1010',border:'rgba(255,80,80,0.1)','border-hover':'rgba(255,80,80,0.2)',text:'#f0e6e6','text-muted':'#6e6262','text-dim':'#3a3030','glow-color':'rgba(201,76,76,0.09)'}},
+    arctic:   { label:'Arctic', cls:'sw-arctic',
+        defaults:{ accent:'#4c88c9','accent-light':'#7ab4e8','accent-dim':'rgba(76,136,201,0.14)','accent-border':'rgba(76,136,201,0.32)',bg:'#0a0c10',surface:'#10141c',surface2:'#161c28','border-solid':'#182030',border:'rgba(100,160,255,0.1)','border-hover':'rgba(100,160,255,0.2)',text:'#e6eef8','text-muted':'#62686e','text-dim':'#2e323a','glow-color':'rgba(76,136,201,0.09)'}},
+    neon:     { label:'Neon', cls:'sw-neon',
+        defaults:{ accent:'#00ffb4','accent-light':'#60ffcc','accent-dim':'rgba(0,255,180,0.1)','accent-border':'rgba(0,255,180,0.28)',bg:'#080810',surface:'#0e0e1c',surface2:'#141428','border-solid':'#0a2018',border:'rgba(0,255,180,0.12)','border-hover':'rgba(0,255,180,0.24)',text:'#d0fff0','text-muted':'#4a6e62','text-dim':'#283830','glow-color':'rgba(0,255,180,0.1)'}},
+    dusk:     { label:'Dusk', cls:'sw-dusk',
+        defaults:{ accent:'#c878f0','accent-light':'#e0a8ff','accent-dim':'rgba(200,120,240,0.14)','accent-border':'rgba(200,120,240,0.32)',bg:'#100a14',surface:'#1a1020',surface2:'#22162c','border-solid':'#2e1840',border:'rgba(200,120,255,0.12)','border-hover':'rgba(200,120,255,0.24)',text:'#f0e8ff','text-muted':'#6e6278','text-dim':'#3a2e42','glow-color':'rgba(200,120,240,0.1)'}}
+};
+const VAR_MAP = {
+    accent:'--gold','accent-light':'--gold-light','accent-dim':'--gold-dim','accent-border':'--gold-border',
+    bg:'--bg',surface:'--surface',surface2:'--surface2','surface2':'--surface2',
+    'border-solid':'--border',border:'--border',text:'--text','text-muted':'--text-muted','text-dim':'--text-dim'
+};
+let size=4,score=0,bestScore=0,squares=[],undoStack=[],undosLeft=15;
+let spawnIdx=-1,mergeIdxs=[],activeTheme='obsidian';
+const UNDOS=15;
+let scoreHistory=JSON.parse(localStorage.getItem('2048-history')||'[]');
+let themeOverrides=JSON.parse(localStorage.getItem('2048-theme-ov')||'{}');
+let designPresets=JSON.parse(localStorage.getItem('2048-presets')||'[]');
+let bgImageData=localStorage.getItem('2048-bg-img')||null;
+let bgOpacity=parseFloat(localStorage.getItem('2048-bg-op')||'0');
+let bgBlurVal=parseFloat(localStorage.getItem('2048-bg-blur')||'0');
+const DEFAULT_TILES={2:"#1c1c22",4:"#232318",8:"#2a1f0e",16:"#2e1a08",32:"#321506",64:"#3a1004",128:"#3d1a2a",256:"#3a1635",512:"#2a1a40",1024:"#1a1a50",2048:"#0f1830"};
+const DEFAULT_TEXT={2:"#d4cfc0",4:"#d4cfc0",8:"#e8c87a",16:"#f0a84a",32:"#f59040",64:"#f87040",128:"#e88ab0",256:"#d87ab8",512:"#b090e8",1024:"#8ab0f0",2048:"#e8c87a"};
+let tileMap=JSON.parse(localStorage.getItem('2048-tiles')||'null')||{...DEFAULT_TILES};
+let tileText=JSON.parse(localStorage.getItem('2048-tilesText')||'null')||{...DEFAULT_TEXT};
 
-        function saveConfig() {
-            localStorage.setItem('2048-config', JSON.stringify({
-                size, round: getComputedStyle(document.documentElement).getPropertyValue('--round'),
-                fontSize: getComputedStyle(document.documentElement).getPropertyValue('--tile-font-size'),
-                bg: getComputedStyle(document.documentElement).getPropertyValue('--bg'),
-                accent: getComputedStyle(document.documentElement).getPropertyValue('--accent')
-            }));
-            localStorage.setItem('2048-tiles', JSON.stringify(tileMap));
-        }
+function buildThemeGrid(){const grid=document.getElementById('theme-grid');grid.innerHTML='';Object.entries(THEME_DEFS).forEach(([key,def])=>{const sw=document.createElement('div');sw.className='sw '+def.cls+(activeTheme===key?' active':'');sw.id='sw-'+key;sw.title=def.label;sw.onclick=()=>applyTheme(key);sw.innerHTML=`<div class="sw-lbl">${def.label}</div>`;grid.appendChild(sw);});}
 
-        function loadConfig() {
-            const cfg = JSON.parse(localStorage.getItem('2048-config'));
-            if(cfg) {
-                size = cfg.size; 
-                document.documentElement.style.setProperty('--round', cfg.round);
-                document.documentElement.style.setProperty('--tile-font-size', cfg.fontSize);
-                document.documentElement.style.setProperty('--bg', cfg.bg);
-                document.documentElement.style.setProperty('--text', cfg.accent);
-                document.documentElement.style.setProperty('--accent', cfg.accent);
-                document.getElementById('s-size').value = size;
-                document.getElementById('s-round').value = parseInt(cfg.round);
-                document.getElementById('s-font').value = parseInt(cfg.fontSize);
-                document.getElementById('p-bg').value = cfg.bg.trim();
-                document.getElementById('p-accent').value = cfg.accent.trim();
-            }
-        }
+function applyTheme(name){const def=THEME_DEFS[name];if(!def)return;activeTheme=name;const ov=themeOverrides[name]||{};const merged={...def.defaults,...ov};setVar('--bg',merged.bg||def.defaults.bg);setVar('--surface',merged.surface||def.defaults.surface);setVar('--surface2',merged.surface2||def.defaults.surface2);setVar('--border',merged['border-solid']?hexToRgba(merged['border-solid'],0.35):(merged.border||def.defaults.border));setVar('--border-hover',merged['border-solid']?hexToRgba(merged['border-solid'],0.65):def.defaults['border-hover']||'rgba(255,255,255,0.14)');setVar('--gold',merged.accent||def.defaults.accent);setVar('--gold-light',merged['accent-light']||def.defaults['accent-light']);setVar('--gold-dim',merged['accent-dim']||def.defaults['accent-dim']);setVar('--gold-border',merged['accent-border']||def.defaults['accent-border']);setVar('--text',merged.text||def.defaults.text);setVar('--text-muted',merged['text-muted']||def.defaults['text-muted']);setVar('--text-dim',merged['text-dim']||def.defaults['text-dim']);setVar('--glow-color',def.defaults['glow-color']||'rgba(201,168,76,0.07)');document.querySelectorAll('.sw').forEach(el=>el.classList.toggle('active',el.id==='sw-'+name));updateOverrideUI();saveConfig();}
 
-        function updateFontSize(val) { document.documentElement.style.setProperty('--tile-font-size', val + 'px'); saveConfig(); }
-        function updateCorners(val) { document.documentElement.style.setProperty('--round', val + 'px'); saveConfig(); }
-        function updateGridSize(val) { size = parseInt(val); document.documentElement.style.setProperty('--size', size); saveConfig(); initGame(); }
-        
-        function populateRegistry() {
-            const reg = document.getElementById('tile-registry'); reg.innerHTML = '';
-            Object.keys(tileMap).forEach(num => {
-                let div = document.createElement('div'); div.className = 'control-group';
-                div.innerHTML = `<span>Tile ${num}</span><input type="color" value="${tileMap[num]}" oninput="tileMap[${num}]=this.value; updateVisuals(); saveConfig();">`;
-                reg.appendChild(div);
-            });
-        }
+function updateOverrideUI(){const def=THEME_DEFS[activeTheme];if(!def)return;const ov=themeOverrides[activeTheme]||{};const merged={...def.defaults,...ov};const titleEl=document.getElementById('override-title');if(titleEl)titleEl.textContent='Customise — '+def.label;const set=(id,key,fb)=>{const el=document.getElementById(id);if(el)el.value=hexOnly(merged[key]||fb);};set('ov-accent','accent','#c9a84c');set('ov-bg','bg','#0c0c0e');set('ov-surface','surface','#141418');set('ov-surface2','surface2','#1c1c22');set('ov-border','border-solid','#333333');set('ov-text','text','#f0ede6');set('ov-text-muted','text-muted','#6e6b62');}
 
-        function syncColor(type, val) {
-            const r = document.documentElement.style;
-            if(type === 'bg') r.setProperty('--bg', val);
-            if(type === 'text') { r.setProperty('--text', val); r.setProperty('--accent', val); }
-            saveConfig();
-        }
+function applyThemeOverride(key,val){if(!themeOverrides[activeTheme])themeOverrides[activeTheme]={};themeOverrides[activeTheme][key]=val;if(key==='accent'){themeOverrides[activeTheme]['accent-light']=lighten(val,30);themeOverrides[activeTheme]['accent-dim']=hexToRgba(val,0.14);themeOverrides[activeTheme]['accent-border']=hexToRgba(val,0.32);}localStorage.setItem('2048-theme-ov',JSON.stringify(themeOverrides));applyTheme(activeTheme);}
+function resetCurrentTheme(){delete themeOverrides[activeTheme];localStorage.setItem('2048-theme-ov',JSON.stringify(themeOverrides));applyTheme(activeTheme);}
+function handleBgUpload(e){const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>{bgImageData=ev.target.result;try{localStorage.setItem('2048-bg-img',bgImageData);}catch(_){}applyBgImage();};reader.readAsDataURL(file);}
+function applyBgImage(){if(!bgImageData)return;setVar('--bg-image',`url(${bgImageData})`);setVar('--bg-img-opacity',bgOpacity/100);setVar('--bg-img-blur',bgBlurVal+'px');const prev=document.getElementById('bg-preview');if(prev)prev.innerHTML=`<img src="${bgImageData}" alt="bg">`;const opEl=document.getElementById('bg-opacity');const blEl=document.getElementById('bg-blur');if(opEl)opEl.value=bgOpacity;if(blEl)blEl.value=bgBlurVal;}
+function clearBgFromDOM(){setVar('--bg-image','none');setVar('--bg-img-opacity','0');}
+function removeBgImage(){bgImageData=null;bgOpacity=0;bgBlurVal=0;localStorage.removeItem('2048-bg-img');localStorage.setItem('2048-bg-op','0');localStorage.setItem('2048-bg-blur','0');clearBgFromDOM();const prev=document.getElementById('bg-preview');if(prev)prev.innerHTML='<span class="bg-placeholder">Click to upload image</span>';const opEl=document.getElementById('bg-opacity');const blEl=document.getElementById('bg-blur');if(opEl)opEl.value=0;if(blEl)blEl.value=0;}
+function setBgOpacity(v){bgOpacity=parseFloat(v);setVar('--bg-img-opacity',bgOpacity/100);localStorage.setItem('2048-bg-op',bgOpacity);}
+function setBgBlur(v){bgBlurVal=parseFloat(v);setVar('--bg-img-blur',bgBlurVal+'px');localStorage.setItem('2048-bg-blur',bgBlurVal);}
+function captureConfig(){return{theme:activeTheme,size,round:getCS('--round'),fontSize:getCS('--tile-font-size'),bg:getCS('--bg'),accent:getCS('--gold'),tileMap:{...tileMap},tileText:{...tileText},overrides:{...(themeOverrides[activeTheme]||{})}};}
+function savePreset(){const nameEl=document.getElementById('preset-name-input');const name=nameEl.value.trim();if(!name){nameEl.focus();return;}designPresets.unshift({name,created:new Date().toLocaleDateString(),cfg:captureConfig()});if(designPresets.length>20)designPresets.pop();localStorage.setItem('2048-presets',JSON.stringify(designPresets));nameEl.value='';renderPresets();}
+function loadPreset(idx){const cfg=designPresets[idx].cfg;size=cfg.size||4;if(cfg.round)setVar('--round',cfg.round);if(cfg.fontSize)setVar('--tile-font-size',cfg.fontSize);if(cfg.tileMap)tileMap={...cfg.tileMap};if(cfg.tileText)tileText={...cfg.tileText};if(cfg.overrides&&cfg.theme){themeOverrides[cfg.theme]=cfg.overrides;localStorage.setItem('2048-theme-ov',JSON.stringify(themeOverrides));}if(cfg.theme)applyTheme(cfg.theme);document.getElementById('s-size').value=size;document.getElementById('s-round').value=parseInt(cfg.round)||10;document.getElementById('s-font').value=parseInt(cfg.fontSize)||24;document.getElementById('lbl-size').textContent=size+'×'+size;setVar('--size',size);populateRegistry();updateVisuals();renderPresets(idx);saveConfig();initGame();}
+function deletePreset(idx,e){e.stopPropagation();designPresets.splice(idx,1);localStorage.setItem('2048-presets',JSON.stringify(designPresets));renderPresets();}
+function renderPresets(activeIdx=-1){const list=document.getElementById('preset-list');if(!list)return;if(!designPresets.length){list.innerHTML='<div class="no-presets">No presets saved yet.</div>';return;}list.innerHTML='';designPresets.forEach((p,i)=>{const item=document.createElement('div');item.className='preset-item'+(i===activeIdx?' active-preset':'');item.onclick=()=>loadPreset(i);item.innerHTML=`<span class="preset-name">${p.name}</span><span class="preset-meta">${p.created}</span><button class="preset-del" onclick="deletePreset(${i},event)" title="Delete">✕</button>`;list.appendChild(item);});}
+function saveToHistory(finalScore){scoreHistory.unshift({score:finalScore,date:new Date().toLocaleDateString(),best:bestScore});if(scoreHistory.length>20)scoreHistory.pop();localStorage.setItem('2048-history',JSON.stringify(scoreHistory));refreshStats();}
+function refreshStats(){const games=scoreHistory.length;document.getElementById('stat-games').textContent=games;if(!games)return;const avg=Math.round(scoreHistory.reduce((a,g)=>a+g.score,0)/games);const best=Math.max(...scoreHistory.map(g=>g.score));document.getElementById('stat-avg').textContent=avg.toLocaleString();document.getElementById('stat-best').textContent=best.toLocaleString();const list=document.getElementById('hist-list');list.innerHTML='';scoreHistory.slice(0,8).forEach((g,i)=>{const isBest=g.score===best;const row=document.createElement('div');row.className='hist-row';row.innerHTML=`<span style="color:var(--text-dim);font-size:10px;min-width:18px;">#${i+1}</span><span>${g.date}</span><span class="hr-s">${g.score.toLocaleString()}</span>${isBest?'<span class="hr-b">Best ✦</span>':'<span></span>'}`;list.appendChild(row);});}
+function togglePanel(id){document.getElementById('body-'+id).classList.toggle('open');document.getElementById('chevron-'+id).classList.toggle('open');}
+function saveConfig(){localStorage.setItem('2048-config',JSON.stringify({size,theme:activeTheme,round:getCS('--round'),fontSize:getCS('--tile-font-size'),bg:getCS('--bg'),accent:getCS('--gold')}));localStorage.setItem('2048-tiles',JSON.stringify(tileMap));localStorage.setItem('2048-tilesText',JSON.stringify(tileText));localStorage.setItem('2048-best',bestScore);}
+function loadConfig(){bestScore=parseInt(localStorage.getItem('2048-best')||'0');document.getElementById('best-score').textContent=bestScore;const cfg=JSON.parse(localStorage.getItem('2048-config')||'null');if(!cfg)return;size=cfg.size||4;if(cfg.round)setVar('--round',cfg.round);if(cfg.fontSize)setVar('--tile-font-size',cfg.fontSize);if(cfg.theme)applyTheme(cfg.theme);document.getElementById('s-size').value=size;document.getElementById('s-round').value=parseInt(cfg.round)||10;document.getElementById('s-font').value=parseInt(cfg.fontSize)||24;document.getElementById('lbl-size').textContent=size+'×'+size;setVar('--size',size);}
+function getCS(p){return getComputedStyle(document.documentElement).getPropertyValue(p).trim();}
+function setVar(n,v){document.documentElement.style.setProperty(n,v);}
+function updateFontSize(v){setVar('--tile-font-size',v+'px');saveConfig();}
+function updateCorners(v){setVar('--round',v+'px');setVar('--round-sm',Math.max(4,v-3)+'px');saveConfig();}
+function updateGridSize(v){size=parseInt(v);setVar('--size',size);saveConfig();initGame();}
+function syncColor(t,v){if(t==='bg'){setVar('--bg',v);applyThemeOverride('bg',v);}if(t==='accent'){applyThemeOverride('accent',v);}saveConfig();}
+function populateRegistry(){const reg=document.getElementById('tile-registry');reg.innerHTML='';Object.keys(tileMap).forEach(num=>{const row=document.createElement('div');row.className='ctrl';row.style.gap='8px';row.innerHTML=`<span style="font-size:11px;min-width:52px;">Tile ${num}</span><span style="font-size:9px;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase;">BG</span><input type="color" value="${tileMap[num]}" title="Tile ${num} background" oninput="tileMap[${num}]=this.value;updateVisuals();saveConfig();"><span style="font-size:9px;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase;">No.</span><input type="color" value="${tileText[num]||'#ffffff'}" title="Tile ${num} number colour" oninput="tileText[${num}]=this.value;updateVisuals();saveConfig();">`;reg.appendChild(row);});}
+function resetTileColors(){tileMap={...DEFAULT_TILES};tileText={...DEFAULT_TEXT};localStorage.setItem('2048-tiles',JSON.stringify(tileMap));localStorage.setItem('2048-tilesText',JSON.stringify(tileText));populateRegistry();updateVisuals();}
+function hexOnly(val){if(!val||val.startsWith('rgba')||val.startsWith('rgb'))return'#888888';if(val.startsWith('#')&&val.length===7)return val;if(val.startsWith('#')&&val.length===4)return'#'+val[1]+val[1]+val[2]+val[2]+val[3]+val[3];return'#888888';}
+function lighten(hex,pct){try{let[r,g,b]=hexToRgb(hex);r=Math.min(255,r+Math.round(pct*2.55));g=Math.min(255,g+Math.round(pct*2.55));b=Math.min(255,b+Math.round(pct*2.55));return rgbToHex(r,g,b);}catch(e){return hex;}}
+function darken(hex,pct){try{let[r,g,b]=hexToRgb(hex);r=Math.max(0,r-Math.round(pct*2.55));g=Math.max(0,g-Math.round(pct*2.55));b=Math.max(0,b-Math.round(pct*2.55));return rgbToHex(r,g,b);}catch(e){return hex;}}
+function hexToRgb(hex){const h=hex.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+function rgbToHex(r,g,b){return'#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');}
+function hexToRgba(hex,a){try{const[r,g,b]=hexToRgb(hex);return`rgba(${r},${g},${b},${a})`;}catch(e){return`rgba(128,128,128,${a})`;}}
 
-        function initGame() {
-            const grid = document.getElementById('grid'); grid.innerHTML = "";
-            document.getElementById('game-over').style.display = 'none';
-            squares = []; score = 0; undosLeft = 3; undoStack = [];
-            document.getElementById('score').innerText = 0;
-            document.getElementById('undo-count').innerText = 3;
-            for (let i = 0; i < size * size; i++) {
-                let cell = document.createElement('div'); cell.className = 'cell';
-                grid.appendChild(cell); squares.push(cell);
-            }
-            populateRegistry(); generate(); generate();
-        }
+function initGame(){const grid=document.getElementById('grid');grid.innerHTML='';document.getElementById('game-over').style.display='none';squares=[];score=0;undoStack=[];spawnIdx=-1;mergeIdxs=[];undosLeft=UNDOS;document.getElementById('score').textContent=0;document.getElementById('undo-count').textContent=undosLeft;setVar('--size',size);for(let i=0;i<size*size;i++){const c=document.createElement('div');c.className='cell';grid.appendChild(c);squares.push(c);}populateRegistry();generateTile();generateTile();}
+function generateTile(){const empty=squares.reduce((a,s,i)=>{if(!s.dataset.val)a.push(i);return a;},[]);if(!empty.length)return;const idx=empty[Math.floor(Math.random()*empty.length)];squares[idx].dataset.val=Math.random()>0.1?2:4;squares[idx].textContent=squares[idx].dataset.val;spawnIdx=idx;updateVisuals();checkGameOver();}
+function updateVisuals(){squares.forEach((s,i)=>{const val=s.dataset.val;if(val){s.classList.add('has-value');s.style.background=tileMap[val]||'var(--surface2)';s.style.color=tileText[val]||'var(--gold-light)';s.style.borderColor='rgba(255,255,255,0.06)';if(i===spawnIdx){s.classList.remove('spawn');void s.offsetWidth;s.classList.add('spawn');}if(mergeIdxs.includes(i)){s.classList.remove('merge');void s.offsetWidth;s.classList.add('merge');}}else{s.classList.remove('has-value','spawn','merge');s.style.background='rgba(255,255,255,0.03)';s.style.color='transparent';s.style.borderColor='rgba(255,255,255,0.04)';s.textContent='';delete s.dataset.val;}});spawnIdx=-1;mergeIdxs=[];}
+function addScore(gained){score+=gained;const el=document.getElementById('score');el.textContent=score;if(gained>0){el.classList.remove('bump');void el.offsetWidth;el.classList.add('bump');}if(score>bestScore){bestScore=score;document.getElementById('best-score').textContent=bestScore;localStorage.setItem('2048-best',bestScore);}}
 
-        function generate() {
-            let empty = squares.filter(s => s.innerHTML === "");
-            if (empty.length) {
-                let s = empty[Math.floor(Math.random() * empty.length)];
-                s.innerHTML = Math.random() > 0.1 ? 2 : 4;
-            }
-            updateVisuals();
-            if(isGameOver()) document.getElementById('game-over').style.display = 'flex';
-        }
+function move(dir){
+    if(document.getElementById('game-over').style.display==='flex')return;
+    const prev=squares.map(s=>s.dataset.val||'');let gained=0;mergeIdxs=[];
+    let board=[];for(let r=0;r<size;r++){board[r]=[];for(let c=0;c<size;c++){const v=squares[r*size+c].dataset.val;board[r][c]=v?parseInt(v):0;}}
+    function slideLine(line){const merged=new Array(line.length).fill(false);const result=new Array(line.length).fill(0);const mp=[];let pos=0;for(let i=0;i<line.length;i++){if(!line[i])continue;if(pos>0&&result[pos-1]===line[i]&&!merged[pos-1]){result[pos-1]*=2;gained+=result[pos-1];merged[pos-1]=true;mp.push(pos-1);}else{result[pos++]=line[i];}}return{result,mergedPositions:mp};}
+    if(dir==='left'){for(let r=0;r<size;r++){const{result,mergedPositions}=slideLine(board[r]);board[r]=result;mergedPositions.forEach(p=>mergeIdxs.push(r*size+p));}}
+    else if(dir==='right'){for(let r=0;r<size;r++){const{result,mergedPositions}=slideLine([...board[r]].reverse());board[r]=result.reverse();mergedPositions.forEach(p=>mergeIdxs.push(r*size+(size-1-p)));}}
+    else if(dir==='up'){for(let c=0;c<size;c++){const col=[];for(let r=0;r<size;r++)col.push(board[r][c]);const{result,mergedPositions}=slideLine(col);for(let r=0;r<size;r++)board[r][c]=result[r];mergedPositions.forEach(p=>mergeIdxs.push(p*size+c));}}
+    else if(dir==='down'){for(let c=0;c<size;c++){const col=[];for(let r=0;r<size;r++)col.push(board[r][c]);const{result,mergedPositions}=slideLine([...col].reverse());const unreversed=result.reverse();for(let r=0;r<size;r++)board[r][c]=unreversed[r];mergedPositions.forEach(p=>mergeIdxs.push((size-1-p)*size+c));}}
+    for(let r=0;r<size;r++)for(let c=0;c<size;c++){const v=board[r][c];squares[r*size+c].dataset.val=v?String(v):'';squares[r*size+c].textContent=v?String(v):'';}
+    const moved=prev.join(',')!==squares.map(s=>s.dataset.val||'').join(',');
+    if(moved){undoStack.push({board:prev,score});if(undoStack.length>30)undoStack.shift();addScore(gained);generateTile();}else{mergeIdxs=[];updateVisuals();}
+}
 
-        function isGameOver() {
-            if (squares.some(s => s.innerHTML === "")) return false;
-            for (let i = 0; i < size; i++) {
-                for (let j = 0; j < size; j++) {
-                    let cur = squares[i * size + j].innerHTML;
-                    if (j < size - 1 && cur === squares[i * size + (j + 1)].innerHTML) return false;
-                    if (i < size - 1 && cur === squares[(i + 1) * size + j].innerHTML) return false;
-                }
-            }
-            return true;
-        }
+function handleUndo(){if(undosLeft<=0||!undoStack.length)return;const state=undoStack.pop();squares.forEach((s,i)=>{s.dataset.val=state.board[i];s.textContent=state.board[i];});score=state.score;document.getElementById('score').textContent=score;undosLeft--;document.getElementById('undo-count').textContent=undosLeft;document.getElementById('game-over').style.display='none';updateVisuals();}
+function checkGameOver(){if(squares.some(s=>!s.dataset.val))return;for(let i=0;i<size;i++)for(let j=0;j<size;j++){const cur=squares[i*size+j].dataset.val;if(j<size-1&&cur===squares[i*size+j+1].dataset.val)return;if(i<size-1&&cur===squares[(i+1)*size+j].dataset.val)return;}document.getElementById('game-over-score').textContent='Final score: '+score.toLocaleString();document.getElementById('game-over').style.display='flex';saveToHistory(score);saveConfig();}
+function shareResult(){const text=`I scored ${score.toLocaleString()} on Grop2048! Can you beat me? grop2048.github.io`;if(navigator.share){navigator.share({title:'2048',text,url:location.href});}else if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>{const b=document.querySelector('.btn-row .btn:last-child'),o=b.textContent;b.textContent='Copied!';setTimeout(()=>b.textContent=o,1600);});}}
 
-        function updateVisuals() {
-            squares.forEach(s => {
-                let val = s.innerHTML;
-                s.style.background = val ? (tileMap[val] || "var(--accent)") : "rgba(255,255,255,0.05)";
-                s.style.color = val ? "#fff" : "transparent";
-            });
-        }
+const dirMap={ArrowLeft:'left',ArrowRight:'right',ArrowUp:'up',ArrowDown:'down'};
+document.addEventListener('keydown',e=>{if(dirMap[e.key]){e.preventDefault();move(dirMap[e.key]);}});
+let sx,sy;
+const ta=document.getElementById('touch-area');
+ta.addEventListener('touchstart',e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY;},{passive:true});
+ta.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))<30)return;if(Math.abs(dx)>Math.abs(dy))move(dx>0?'right':'left');else move(dy>0?'down':'up');},{passive:true});
 
-        function move(dir) {
-            if(document.getElementById('game-over').style.display === 'flex') return;
-            let prev = squares.map(s => s.innerHTML), moved = false;
-            for (let i = 0; i < size; i++) {
-                let line = [];
-                for (let j = 0; j < size; j++) {
-                    let idx = (dir === 'left' || dir === 'right') ? (i * size + j) : (j * size + i);
-                    line.push(squares[idx].innerHTML);
-                }
-                if (dir === 'right' || dir === 'down') line.reverse();
-                let filtered = line.filter(x => x !== "");
-                for (let j = 0; j < filtered.length - 1; j++) {
-                    if (filtered[j] === filtered[j+1]) {
-                        filtered[j] = parseInt(filtered[j]) * 2; score += filtered[j];
-                        filtered.splice(j+1, 1);
-                    }
-                }
-                while(filtered.length < size) filtered.push("");
-                if (dir === 'right' || dir === 'down') filtered.reverse();
-                for (let j = 0; j < size; j++) {
-                    let idx = (dir === 'left' || dir === 'right') ? (i * size + j) : (j * size + i);
-                    if(squares[idx].innerHTML !== String(filtered[j])) { squares[idx].innerHTML = filtered[j]; moved = true; }
-                }
-            }
-            if (moved) { 
-                undoStack.push({b: prev, s: (score - (undoStack.length ? (score - undoStack[undoStack.length-1].s) : score))}); 
-                if(undoStack.length > 10) undoStack.shift();
-                generate(); 
-                document.getElementById('score').innerText = score; 
-            }
-        }
-
-        function undo() {
-            if(undosLeft > 0 && undoStack.length > 0) {
-                let state = undoStack.pop(); squares.forEach((s, i) => s.innerHTML = state.b[i]);
-                score = state.s; document.getElementById('score').innerText = score;
-                undosLeft--; document.getElementById('undo-count').innerText = undosLeft;
-                document.getElementById('game-over').style.display = 'none';
-                updateVisuals();
-            }
-        }
-
-        let sX, sY;
-        const touchArea = document.getElementById('touch-area');
-        touchArea.addEventListener('touchstart', e => { sX = e.touches[0].clientX; sY = e.touches[0].clientY; }, {passive: true});
-        touchArea.addEventListener('touchend', e => {
-            let dX = e.changedTouches[0].clientX - sX, dY = e.changedTouches[0].clientY - sY;
-            if (Math.max(Math.abs(dX), Math.abs(dY)) > 30) {
-                if (Math.abs(dX) > Math.abs(dY)) move(dX > 0 ? 'right' : 'left');
-                else move(dY > 0 ? 'down' : 'up');
-            }
-        });
-        document.addEventListener('keydown', e => { if (e.key.includes('Arrow')) { e.preventDefault(); move(e.key.replace('Arrow','').toLowerCase()); } });
-
-        loadConfig();
-        initGame();
-    </script>
+loadConfig();
+buildThemeGrid();
+refreshStats();
+renderPresets();
+applyBgImage();
+updateOverrideUI();
+initGame();
+</script>
 </body>
 </html>
